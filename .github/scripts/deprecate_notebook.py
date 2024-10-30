@@ -4,19 +4,19 @@ import nbformat
 from PIL import Image, ImageDraw
 from nbformat.v4 import new_notebook, new_markdown_cell
 
-def find_notebook(notebook_name, root_folder='notebooks'):
-    # Set the target folder to the notebooks directory at the repository root
-    target_folder = os.path.join(os.getcwd(), root_folder)
+def find_notebook(notebook_name):
+    # Start from the repository root (current working directory in the GitHub runner)
+    repo_root = os.getcwd()
     
-    # Walk through all subdirectories to find the notebook file
-    print(f"Searching for {notebook_name} in {target_folder} and its subdirectories...")
-    for dirpath, _, filenames in os.walk(target_folder):
+    # Walk through all subdirectories in the repository to find the notebook file
+    print(f"Searching for {notebook_name} in the repository root and its subdirectories...")
+    for dirpath, _, filenames in os.walk(repo_root):
         print(f"Checking directory: {dirpath}")  # Debugging output
         if notebook_name in filenames:
             notebook_path = os.path.join(dirpath, notebook_name)
             print(f"Found notebook at: {notebook_path}")
             return notebook_path
-    print(f"Notebook {notebook_name} not found in notebooks/ or its subfolders.")  # Corrected line
+    print(f"Notebook {notebook_name} not found in the repository or its subfolders.")
     return None
 
 def add_deprecation_notice(notebook_path):
@@ -51,5 +51,5 @@ if __name__ == "__main__":
         add_deprecation_notice(notebook_path)
         print(f"Deprecation notice added to {notebook_path}.")
     else:
-        print(f"Notebook {notebook_name} not found in notebooks/ or its subfolders.")
+        print(f"Notebook {notebook_name} not found in the repository or its subfolders.")
         sys.exit(1)
