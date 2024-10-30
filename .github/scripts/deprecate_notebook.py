@@ -16,7 +16,7 @@ def find_notebook(notebook_name, root_folder='notebooks'):
             notebook_path = os.path.join(dirpath, notebook_name)
             print(f"Found notebook at: {notebook_path}")
             return notebook_path
-    print(f"{notebook_name} not found in {target_folder} or its subdirectories.")
+    print(f"Notebook {notebook_name} not found in notebooks/ or its subfolders.")  # Corrected line
     return None
 
 def add_deprecation_notice(notebook_path):
@@ -51,4 +51,5 @@ if __name__ == "__main__":
         add_deprecation_notice(notebook_path)
         print(f"Deprecation notice added to {notebook_path}.")
     else:
-        print(f"Notebook {notebook_name} not found in notebooks/ or i
+        print(f"Notebook {notebook_name} not found in notebooks/ or its subfolders.")
+        sys.exit(1)
