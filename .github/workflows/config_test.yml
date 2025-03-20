@@ -33,9 +33,11 @@ jobs:
         run: |
           # Find all notebooks and format them as a JSON array
           notebooks=$(find notebooks -name "*.ipynb" | jq -R . | jq -s .)
+          
+          # Debug the found notebooks
           echo "Notebooks found: $notebooks"
           
-          # Set the matrix output correctly
+          # Set the matrix output correctly (strip any leading/trailing whitespace or issues)
           echo "matrix=$notebooks" >> $GITHUB_OUTPUT
         
   get-runners:
