@@ -30,7 +30,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: set-matrix
-        run: echo "matrix=$(find notebooks -name "*.ipynb" | jq -cnR '[inputs | select(length>0)]')" >> $GITHUB_OUTPUT
+        run: |
+          # Find all notebooks and format them as a JSON array
+          notebooks=$(find notebooks -name "*.ipynb" | jq -R . | jq -s .)
+          echo "Notebooks found: $notebooks"
+          
+          # Set the matrix output correctly
+          echo "matrix=$notebooks" >> $GITHUB_OUTPUT
         
   get-runners:
       name: Get Runners
