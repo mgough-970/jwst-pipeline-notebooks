@@ -1,0 +1,136 @@
+name: Config Test - Execute Jupyter Notebooks
+on:
+  workflow_dispatch
+  workflow_call:
+    inputs:  
+      python-version:e
+        required: true
+        type: string
+    secrets:
+      CASJOBS_USERID:
+        description: 'CASJOBS user ID'
+        required: false
+      CASJOBS_PW:
+        description: 'CASJOBS password'
+        required: false
+env:
+  CASJOBS_PW: ${{ secrets.CASJOBS_PW }}
+  CASJOBS_USERID: ${{ secrets.CASJOBS_USERID }}
+  
+jobs:
+  gather-notebooks:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        run: echo "matrix=$(find notebooks -name "*.ipynb" | jq -cnR '[inputs | select(length>0)]')" >> $GITHUB_OUTPUT
+        
+  get-runners:
+      name: Get Runners
+      runs-on: ubuntu-latest
+      strategy:
+        fail-fast: false
+        matrix:
+            notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
+      outputs: 
+        runnerName: ${{ steps.runner-check.outputs.test }}
+        
+      steps:
+      - name: Notebook check
+      - id: runner-check
+        run: echo "Checking notebook ${{ matrix.notebooks }}"
+        
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Parse ci_config file and set runner size
+        id: parse_config
+        run: |
+          # Default runner is ubuntu-latest
+          runner_size="ubuntu-latest"
+          
+          # Path to your ci_config file (adjust if it's elsewhere)
+          ci_config_file="ci_config.txt"
+          # Check if the ci_config.txt file exists
+          if [[ ! -f "$ci_config_file" ]]; then
+            echo "ci_config.txt not found!"
+            exit 1
+          fi          
+          # Read the ci_config file and parse the notebook name and runner size
+          while IFS=: read -r notebook runner; do
+            if [[ $notebook == ${{ matrix.notebooks }} ]]; then
+              runner_size=$runner
+              break
+            fi
+          done < "$ci_config_file"
+          
+          # Set the runner size as an output variable
+          run: echo "runnerName=runner_size" >> "$GITHUB_OUTPUT"
+          
+  notebook-execution:
+    needs: gather-notebooks
+    environment: ci_env
+    runs-on:
+      group: ${{ needs.get-runners.outputs.runnerName }}
+      
+    strategy:
+        fail-fast: false
+        matrix:
+            notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5 ## needed for caching
+        with:
+          python-version: ${{ inputs.python-version }}
+          cache: 'pip'
+          
+      - name: Add conda to system path
+        run: |
+          # $CONDA is an environment variable pointing to the root of the miniconda directory
+          echo $CONDA/bin >> $GITHUB_PATH
+      - name: Install dependencies
+        run: |
+          ## Install the local requirements file
+          echo DEBUG ---
+          pwd ## print working directory
+          echo "Path to req's: $(dirname ${{ matrix.notebooks }})/requirements.txt"
+          ls $(dirname ${{ matrix.notebooks }})
+          echo ---
+          if [ -f $(dirname "${{ matrix.notebooks }}")/pre-requirements.sh ]; then
+            chmod +x $(dirname "${{ matrix.notebooks }}")/pre-requirements.sh
+            ./$(dirname "${{ matrix.notebooks }}")/pre-requirements.sh
+          fi
+          if [ -f $(dirname "${{ matrix.notebooks }}")/pre-requirements.txt ]; then
+            pip install -r $(dirname "${{ matrix.notebooks }}")/pre-requirements.txt
+          fi
+          if [ -f pre-requirements.txt ]; then
+            pip install -r pre-requirements.txt
+            echo Found Pre-Reqs
+          fi
+          pip install -r $(dirname ${{ matrix.notebooks }})/requirements.txt
+          pip install pytest
+          pip install nbval
+          pip install nbconvert
+          pip install bandit
+          pip install ipykernel
+
+
+      - name: Execute notebooks
+        run: |
+          export CASJOBS_PW="$CI_CASJOBS_PW"
+          export CASJOBS_USERID="$CI_CASJOBS_USERID"
+          jupyter nbconvert --template classic --to html --execute "${{ matrix.notebooks }}"
+          
+      - name: Validate notebooks 
+        run: |
+         pytest --nbval "${{ matrix.notebooks }}" 
+
+      - name: Scan with Bandit
+        run: |
+          pip install ipython
+          jupyter nbconvert --to script ${{ matrix.notebooks }}
+          pyfile=$(echo "${{ matrix.notebooks }}" | sed 's/\.ipynb$/.py/')
+          bandit -lll -iii $pyfile
