@@ -46,7 +46,7 @@ jobs:
       strategy:
         fail-fast: false
         matrix:
-            notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
+            notebooks: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
       outputs: 
         runnerName: ${{ steps.runner-check.outputs.test }}
         
