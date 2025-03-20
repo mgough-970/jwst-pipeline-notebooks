@@ -33,19 +33,14 @@ jobs:
       - id: set-matrix
         run: |
           # Find all notebooks and format them as a JSON array
-          notebooks=$(find notebooks -name "*.ipynb" | jq -cnR '[inputs | select(length>0)]')
+          notebooks=$(find notebooks/ -type f -name "*.ipynb" | jq -R -s -c 'split("\n")[:-1]')
           
           # Debugging: print the found notebooks
           echo "Notebooks found: $notebooks"
-          
-          # Check if notebooks are found, if not, fail the job with an error message
-          if [ -z "$notebooks" ]; then
-            echo "No notebooks found, exiting!"
-            exit 1
-          fi
+          nbMatrix=$(echo "$notebooks" | jq -c '{ "notebook": . }')
           
           # Set the matrix output correctly
-          echo "matrix=$notebooks" >> $GITHUB_OUTPUT
+          echo "matrix=$nbMatrix" >> $GITHUB_OUTPUT
         
   get-runners:
     name: get-runners
