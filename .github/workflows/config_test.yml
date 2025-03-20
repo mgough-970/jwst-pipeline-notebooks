@@ -58,10 +58,8 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       - name: Debug matrix in get-runners
-        run: echo "Matrix from previous job: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}"
-    outputs: 
-      runnerName: ${{ steps.parse_config.outputs.runnerName }} # Correct reference to the output variable
-    steps:
+        run: echo "Matrix from previous job ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}"
+#    steps:
       - name: Checkout repository
         uses: actions/checkout@v3
         
@@ -88,7 +86,9 @@ jobs:
           
           # Set the runner size as an output variable
           echo "runnerName=$runner_size" >> $GITHUB_OUTPUT
-
+    outputs: 
+      runnerName: ${{ steps.parse_config.outputs.runnerName }} # Correct reference to the output variable
+      
   notebook-execution:
     needs: gather-notebooks
     environment: ci_env
