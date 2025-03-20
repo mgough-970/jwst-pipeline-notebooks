@@ -30,15 +30,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: set-matrix
-        run: |
-          # Find all notebooks and format them as a JSON array
-          notebooks=$(find notebooks -name "*.ipynb" | jq -R . | jq -s .)
-          
-          # Debug: Print the found notebooks (to ensure they are correctly formatted)
-          echo "Notebooks found: $notebooks"
-          
-          # Set the matrix output correctly
-          echo "matrix=$(echo $notebooks | jq -c .)" >> $GITHUB_OUTPUT
+        run: echo "matrix=$(find notebooks -name "*.ipynb" | jq -cnR '[inputs | select(length>0)]')" >> $GITHUB_OUTPUT
         
   get-runners:
       name: Get Runners
@@ -46,9 +38,8 @@ jobs:
       strategy:
         fail-fast: false
         matrix:
-            notebooks: ${{ fromJson(needs.set-matrix.outputs.matrix) }}
-      outputs: 
-        runnerName: ${{ steps.runner-check.outputs.test }}
+          notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
+          #runnerName: ${{ steps.runner-check.outputs.test }}
         
       steps:
       - name: Checkout repository
