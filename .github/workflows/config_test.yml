@@ -72,7 +72,7 @@ jobs:
           done < "$ci_config_file"
           
           # Set the runner size as an output variable
-          run: echo "runnerName=runner_size" >> "$GITHUB_OUTPUT"
+          echo "runnerName=runner_size" >> "$GITHUB_OUTPUT"
           
   notebook-execution:
     needs: gather-notebooks
