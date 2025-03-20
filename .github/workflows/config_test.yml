@@ -29,22 +29,28 @@ jobs:
     outputs:
       matrix: ${{ steps.set-matrix.outputs.matrix }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
       - name: Find notebook files
         id: set-matrix
         run: |
-          # Find all .ipynb files under notebooks/ directory and filter out empty lines
-          notebooks=$(find notebooks/ -type f -name "*.ipynb" | grep . | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          # Ensure the output is always valid JSON, even if no files are found
+          notebooks=$(find notebooks/ -type f -name "*.ipynb" 2>/dev/null | grep . | jq -R -s -c 'split("\n") | map(select(length > 0))' || echo '[]')
           
-          # Check if any notebooks were found
-          if [ "$(echo "$notebooks" | jq length)" -eq 0 ]; then
-            echo "No notebooks found in notebooks/ directory"
-            echo "matrix={\"notebook\":[]}" >> $GITHUB_OUTPUT
-          else
-            # Create matrix JSON
-            matrix_json=$(echo "$notebooks" | jq -c '{ "notebook": . }')
-            echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
-          fi
-
+          # Create matrix JSON
+          matrix_json=$(echo "$notebooks" | jq -c '{ "notebook": . }')
+          
+          # Debug output
+          echo "Found notebooks: $notebooks"
+          echo "Matrix JSON: $matrix_json"
+          
+          # Set output (ensure it's never empty)
+          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
+          
+      - name: Verify matrix output
+        run: |
+          echo "Matrix output: ${{ steps.set-matrix.outputs.matrix }}"
         
   get-runners:
     name: get-runners
