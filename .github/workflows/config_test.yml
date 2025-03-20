@@ -52,7 +52,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
+    env:
+     # matrix:
         notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
     steps:
       - name: Checkout repository
