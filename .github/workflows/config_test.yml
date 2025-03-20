@@ -18,6 +18,7 @@ on:
       CASJOBS_PW:
         description: 'CASJOBS password'
         required: false
+
 env:
   CASJOBS_PW: ${{ secrets.CASJOBS_PW }}
   CASJOBS_USERID: ${{ secrets.CASJOBS_USERID }}
@@ -37,6 +38,12 @@ jobs:
           # Debugging: print the found notebooks
           echo "Notebooks found: $notebooks"
           
+          # Check if notebooks are found, if not, fail the job with an error message
+          if [ -z "$notebooks" ]; then
+            echo "No notebooks found, exiting!"
+            exit 1
+          fi
+          
           # Set the matrix output correctly
           echo "matrix=$notebooks" >> $GITHUB_OUTPUT
         
@@ -47,6 +54,11 @@ jobs:
       fail-fast: false
       matrix:
         notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      - name: Debug matrix in get-runners
+        run: echo "Matrix from previous job: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}"
     outputs: 
       runnerName: ${{ steps.parse_config.outputs.runnerName }} # Correct reference to the output variable
     steps:
