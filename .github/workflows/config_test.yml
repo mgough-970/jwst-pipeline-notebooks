@@ -36,10 +36,9 @@ jobs:
       name: Get Runners
       runs-on: ubuntu-latest
       strategy:
-        fail-fast: false
-        matrix:
-          notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
-          #runnerName: ${{ steps.runner-check.outputs.test }}
+          fail-fast: false
+          matrix:
+              notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
         
       steps:
       - name: Checkout repository
