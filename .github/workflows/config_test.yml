@@ -33,7 +33,7 @@ jobs:
         run: echo "matrix=$(find notebooks -name "*.ipynb" | jq -cnR '[inputs | select(length>0)]')" >> $GITHUB_OUTPUT
         
   get-runners:
-      name: Get Runners
+      name: get-runners
       runs-on: ubuntu-latest
       strategy:
           fail-fast: false
