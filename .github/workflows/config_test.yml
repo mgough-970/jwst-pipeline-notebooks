@@ -30,19 +30,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - id: set-matrix
-        run: echo "matrix=$(find notebooks -name "*.ipynb" | jq -cnR '[inputs | select(length>0)]')" >> $GITHUB_OUTPUT
+        run: |
+          # Find all notebooks and format them as a JSON array
+          notebooks=$(find notebooks -name "*.ipynb" | jq -R . | jq -s .)
+          
+          # Debugging: print the found notebooks
+          echo "Notebooks found: $notebooks"
+          
+          # Set the matrix output correctly
+          echo "matrix=$notebooks" >> $GITHUB_OUTPUT
         
   get-runners:
-      name: get-runners
-      runs-on: ubuntu-latest
-      strategy:
-          fail-fast: false
-          matrix:
-              notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
-        
-      steps:
+    name: get-runners
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
+    outputs: 
+      runnerName: ${{ steps.parse_config.outputs.runnerName }} # Correct reference to the output variable
+    steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        
       - name: Parse ci_config file and set runner size
         id: parse_config
         run: |
@@ -58,20 +68,19 @@ jobs:
           fi          
           # Read the ci_config file and parse the notebook name and runner size
           while IFS=: read -r notebook runner; do
-            if [[ $notebook == ${{ matrix.notebooks }} ]]; then
+            if [[ "$notebook" == "${{ matrix.notebooks }}" ]]; then
               runner_size=$runner
               break
             fi
           done < "$ci_config_file"
           
           # Set the runner size as an output variable
-          echo "runnerName=runner_size" >> "$GITHUB_OUTPUT"
-          
+          echo "runnerName=$runner_size" >> $GITHUB_OUTPUT
+
   notebook-execution:
     needs: gather-notebooks
     environment: ci_env
-    runs-on:
-      group: ${{ needs.get-runners.outputs.runnerName }}
+    runs-on: ${{ needs.get-runners.outputs.runnerName }} 
       
     strategy:
         fail-fast: false
