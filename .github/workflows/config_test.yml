@@ -1,9 +1,14 @@
 name: Config Test - Execute Jupyter Notebooks
 on:
-  workflow_dispatch
+  workflow_dispatch:
+    inputs:  
+      python-version:
+        required: true
+        type: string
+
   workflow_call:
     inputs:  
-      python-version:e
+      python-version:
         required: true
         type: string
     secrets:
