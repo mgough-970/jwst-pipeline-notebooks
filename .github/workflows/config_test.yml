@@ -76,7 +76,9 @@ jobs:
             # Get the runner for this notebook, default to "ubuntu-latest" if not found
             #runner="${config_map["runs-on: group: $sanitized_notebook"]:-"ubuntu-latest"}"
             runner="${config_map["$sanitized_notebook"]:-"ubuntu-latest"}"
-            runner="${runner == 'ubuntu-latest' ? runner : 'group: ' + runner}"         
+            if [[ "$runner" != "ubuntu-latest" ]]; then
+              runner="group: $runner"
+            fi        
             # Add notebook and runner size to the matrix
             matrix=$(echo $matrix | jq --arg notebook "$notebook" --arg runner "$runner" \
               '. + [{"notebook": $notebook, "runner": $runner}]')
