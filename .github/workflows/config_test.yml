@@ -81,13 +81,13 @@ jobs:
               '. + [{"notebook": $notebook, "runner": $runner}]')
           done
           
-          # Debugging output
-          echo "Matrix: $matrix"
+          # Ensure the matrix is valid JSON (remove extra spaces or characters)
+          echo "Matrix JSON: $matrix"  # Debugging output
+          # Remove leading/trailing spaces and newlines
+          clean_matrix=$(echo "$matrix" | jq -c .)
           
           # Set the matrix output (ensure it's never empty)
-          echo "matrix=$matrix" >> $GITHUB_OUTPUT
-
-
+          echo "matrix=$clean_matrix" >> $GITHUB_OUTPUT
 
 
   notebook-execution:
