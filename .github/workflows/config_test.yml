@@ -94,7 +94,6 @@ jobs:
     needs: gather-notebooks
     environment: ci_env
     runs-on: ${{ steps.set-runner.outputs.runner }}
-
     strategy:
         fail-fast: false
         matrix:
