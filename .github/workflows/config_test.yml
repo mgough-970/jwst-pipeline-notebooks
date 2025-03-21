@@ -74,7 +74,7 @@ jobs:
             sanitized_notebook=$(echo "$notebook" | base64)  # Encode notebook path to handle special characters
           
             # Get the runner for this notebook, default to "ubuntu-latest" if not found
-            runner="${config_map["$sanitized_notebook"]:-"ubuntu-latest"}"
+            runner="${config_map["runs-on: group: $sanitized_notebook"]:-"ubuntu-latest"}"
           
             # Add notebook and runner size to the matrix
             matrix=$(echo $matrix | jq --arg notebook "$notebook" --arg runner "$runner" \
@@ -89,8 +89,6 @@ jobs:
           # Set the matrix output (ensure it's never empty)
           echo "matrix=$clean_matrix" >> $GITHUB_OUTPUT
 
-
-
   notebook-execution:
     needs: gather-notebooks
     environment: ci_env
@@ -100,16 +98,8 @@ jobs:
         matrix:
             include: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
 
-    runs-on: ${{ steps.set-runner.outputs.runner }}
+    runs-on: ${{ include.runner }}
     steps:
-      - name: Set Runner
-        id: set-runner
-        run: |
-          if [ "${{ matrix.runner }}" = "ubuntu-latest" ]; then
-            echo "runner=ubuntu-latest" >> $GITHUB_OUTPUT
-          else
-            echo "runner=group: ${{ matrix.runner }}" >> $GITHUB_OUTPUT
-        shell: bash
       - uses: actions/checkout@v4
       - name: Set up Python ${{ inputs.python-version }}
         uses: actions/setup-python@v5 
