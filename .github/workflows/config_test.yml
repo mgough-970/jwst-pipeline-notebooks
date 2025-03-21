@@ -67,7 +67,7 @@ jobs:
 #    steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
       - name: Parse ci_config file and set runner size
         id: parse_config
         run: |
@@ -97,7 +97,7 @@ jobs:
   notebook-execution:
     needs: get-runners
     environment: ci_env
-    runs-on: ${{ needs.get-runners.outputs.runnerName }} 
+    runs-on: ${{ fromJson(needs.get-runners.outputs.runnerName) }} 
       
     strategy:
         fail-fast: false
