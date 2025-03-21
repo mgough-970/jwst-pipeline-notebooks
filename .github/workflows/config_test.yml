@@ -97,6 +97,7 @@ jobs:
     strategy:
         fail-fast: false
         matrix:
+            runner: ${{ matrix.runner }}
             include: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
     steps:
       - name: Set Runner
