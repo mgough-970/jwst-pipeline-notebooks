@@ -93,12 +93,21 @@ jobs:
   notebook-execution:
     needs: gather-notebooks
     environment: ci_env
-    runs-on: "${{ matrix.runner == 'ubuntu-latest' ? 'ubuntu-latest' : 'group: ' + matrix.runner }}"
+    runs-on: ${{ steps.set-runner.outputs.runner }}
+
     strategy:
         fail-fast: false
         matrix:
             include: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
     steps:
+      - name: Set Runner
+        id: set-runner
+        run: |
+          if [ "${{ matrix.runner }}" = "ubuntu-latest" ]; then
+            echo "runner=ubuntu-latest" >> $GITHUB_OUTPUT
+          else
+            echo "runner=group: ${{ matrix.runner }}" >> $GITHUB_OUTPUT
+        shell: bash
       - name: Print runner information
         run: |
           echo "Using runner: ${{ runner.os }} with size: ${{ matrix.runner }}"    
