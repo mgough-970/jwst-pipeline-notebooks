@@ -93,7 +93,7 @@ jobs:
   notebook-execution:
     needs: gather-notebooks
     environment: ci_env
-    runs-on: ${{ matrix.runner == 'ubuntu-latest' && 'ubuntu-latest' || format('group:{0}', matrix.runner)   }}
+    runs-on: ${{ matrix.runner == 'ubuntu-latest' && 'ubuntu-latest' || format("group: {0}", matrix.runner)  }}
     strategy:
         fail-fast: false
         matrix:
