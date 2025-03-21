@@ -60,8 +60,9 @@ jobs:
             notebook=$(echo "$notebook" | xargs)
             runner=$(echo "$runner" | xargs)
             
-            # Store notebook and runner size in the map
-            config_map["$notebook"]=$runner
+            # Use printf to sanitize notebook paths and store in associative array
+            key=$(printf "%s" "$notebook" | sed 's/\//_/g')  # Replace slashes with underscores
+            config_map["$key"]=$runner
           done < "$ci_config_file"
           
           # Now, loop through the notebooks and set their runner size
@@ -69,8 +70,11 @@ jobs:
             # Trim leading path information (i.e., extract just the filename)
             notebook_name=$(echo "$notebook" | sed 's|.*/\(.*\)|\1|')
           
+            # Sanitize the notebook path for array key usage
+            sanitized_notebook=$(printf "%s" "$notebook" | sed 's/\//_/g')  # Replace slashes with underscores
+          
             # Get the runner for this notebook, default to "ubuntu-latest" if not found
-            runner="${config_map["$notebook"]:-"ubuntu-latest"}"
+            runner="${config_map["$sanitized_notebook"]:-"ubuntu-latest"}"
           
             # Add notebook and runner size to the matrix
             matrix=$(echo $matrix | jq --arg notebook "$notebook" --arg runner "$runner" \
