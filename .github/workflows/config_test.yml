@@ -22,7 +22,7 @@ on:
 env:
   CASJOBS_PW: ${{ secrets.CASJOBS_PW }}
   CASJOBS_USERID: ${{ secrets.CASJOBS_USERID }}
-  
+
 jobs:
   gather-notebooks:
     runs-on: ubuntu-latest
@@ -32,81 +32,53 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
       
-      - name: Find notebook files
+      - name: Find notebook files and determine runner size
         id: set-matrix
         run: |
-          # Ensure the output is always valid JSON, even if no files are found
-          notebooks=$(find notebooks/ -type f -name "*.ipynb" 2>/dev/null | grep . | jq -R -s -c 'split("\n") | map(select(length > 0))' || echo '[]')
+          # Default matrix (empty)
+          matrix="[]"
           
-          # Create matrix JSON
-          matrix_json=$(echo "$notebooks" | jq -c '{ "notebook": . }')
+          # Path to your ci_config file
+          ci_config_file="ci_config.txt"
+          # Ensure the ci_config.txt file exists
+          if [[ ! -f "$ci_config_file" ]]; then
+            echo "ci_config.txt not found!"
+            exit 1
+          fi
           
-          # Debug output
-          echo "Found notebooks: $notebooks"
-          echo "Matrix JSON: $matrix_json"
+          # Read each line from ci_config.txt and construct the matrix
+          while IFS=: read -r notebook runner; do
+            # Trim spaces and construct a JSON object with both notebook and runner size
+            notebook=$(echo "$notebook" | xargs)
+            runner=$(echo "$runner" | xargs)
+            
+            # Add notebook and runner size to the matrix
+            matrix=$(echo $matrix | jq --arg notebook "$notebook" --arg runner "$runner" \
+              '. + [{"notebook": $notebook, "runner": $runner}]')
+          done < "$ci_config_file"
+
+          # Debugging output
+          echo "Matrix: $matrix"
           
-          # Set output (ensure it's never empty)
-          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
+          # Set the matrix output (ensure it's never empty)
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
           
       - name: Verify matrix output
         run: |
           echo "Matrix output: ${{ steps.set-matrix.outputs.matrix }}"
-        
-  get-runners:
-    name: get-runners
-    needs: gather-notebooks
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      - name: Debug matrix in get-runners
-        run: echo "Matrix from previous job ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}"
-#    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
 
-      - name: Parse ci_config file and set runner size
-        id: parse_config
-        run: |
-          # Default runner is ubuntu-latest
-          runner_size="ubuntu-latest"
-          
-          # Path to your ci_config file (adjust if it's elsewhere)
-          ci_config_file="ci_config.txt"
-          # Check if the ci_config.txt file exists
-          if [[ ! -f "$ci_config_file" ]]; then
-            echo "ci_config.txt not found!"
-            exit 1
-          fi          
-          # Read the ci_config file and parse the notebook name and runner size
-          while IFS=: read -r notebook runner; do
-            if [[ "$notebook" == "${{ matrix.notebooks }}" ]]; then
-              runner_size=$runner
-              break
-            fi
-          done < "$ci_config_file"
-          
-          # Set the runner size as an output variable
-          echo "runnerName=$runner_size" >> $GITHUB_OUTPUT
-    outputs: 
-      runnerName: ${{ steps.parse_config.outputs.runnerName }} # Correct reference to the output variable
-      
   notebook-execution:
-    needs: get-runners
+    needs: gather-notebooks
     environment: ci_env
-    runs-on: ${{ fromJson(needs.get-runners.outputs.runnerName) }} 
-      
+    runs-on: ${{ matrix.runner }}  # Use the runner size determined from the matrix
     strategy:
         fail-fast: false
         matrix:
-            notebooks: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
+            include: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ inputs.python-version }}
-        uses: actions/setup-python@v5 ## needed for caching
+        uses: actions/setup-python@v5 
         with:
           python-version: ${{ inputs.python-version }}
           cache: 'pip'
@@ -115,46 +87,46 @@ jobs:
         run: |
           # $CONDA is an environment variable pointing to the root of the miniconda directory
           echo $CONDA/bin >> $GITHUB_PATH
+
       - name: Install dependencies
         run: |
-          ## Install the local requirements file
-          echo DEBUG ---
-          pwd ## print working directory
-          echo "Path to req's: $(dirname ${{ matrix.notebooks }})/requirements.txt"
-          ls $(dirname ${{ matrix.notebooks }})
-          echo ---
-          if [ -f $(dirname "${{ matrix.notebooks }}")/pre-requirements.sh ]; then
-            chmod +x $(dirname "${{ matrix.notebooks }}")/pre-requirements.sh
-            ./$(dirname "${{ matrix.notebooks }}")/pre-requirements.sh
+          echo "DEBUG ---"
+          pwd
+          echo "Path to req's: $(dirname ${{ matrix.notebook }})/requirements.txt"
+          ls $(dirname ${{ matrix.notebook }})
+          echo "---"
+          
+          if [ -f $(dirname "${{ matrix.notebook }}")/pre-requirements.sh ]; then
+            chmod +x $(dirname "${{ matrix.notebook }}")/pre-requirements.sh
+            ./$(dirname "${{ matrix.notebook }}")/pre-requirements.sh
           fi
-          if [ -f $(dirname "${{ matrix.notebooks }}")/pre-requirements.txt ]; then
-            pip install -r $(dirname "${{ matrix.notebooks }}")/pre-requirements.txt
+          if [ -f $(dirname "${{ matrix.notebook }}")/pre-requirements.txt ]; then
+            pip install -r $(dirname "${{ matrix.notebook }}")/pre-requirements.txt
           fi
           if [ -f pre-requirements.txt ]; then
             pip install -r pre-requirements.txt
-            echo Found Pre-Reqs
+            echo "Found Pre-Reqs"
           fi
-          pip install -r $(dirname ${{ matrix.notebooks }})/requirements.txt
+          pip install -r $(dirname ${{ matrix.notebook }})/requirements.txt
           pip install pytest
           pip install nbval
           pip install nbconvert
           pip install bandit
           pip install ipykernel
 
-
       - name: Execute notebooks
         run: |
           export CASJOBS_PW="$CI_CASJOBS_PW"
           export CASJOBS_USERID="$CI_CASJOBS_USERID"
-          jupyter nbconvert --template classic --to html --execute "${{ matrix.notebooks }}"
-          
-      - name: Validate notebooks 
+          jupyter nbconvert --template classic --to html --execute "${{ matrix.notebook }}"
+
+      - name: Validate notebooks
         run: |
-         pytest --nbval "${{ matrix.notebooks }}" 
+          pytest --nbval "${{ matrix.notebook }}"
 
       - name: Scan with Bandit
         run: |
           pip install ipython
-          jupyter nbconvert --to script ${{ matrix.notebooks }}
-          pyfile=$(echo "${{ matrix.notebooks }}" | sed 's/\.ipynb$/.py/')
+          jupyter nbconvert --to script ${{ matrix.notebook }}
+          pyfile=$(echo "${{ matrix.notebook }}" | sed 's/\.ipynb$/.py/')
           bandit -lll -iii $pyfile
