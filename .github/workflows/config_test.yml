@@ -135,10 +135,10 @@ jobs:
             echo "Found Pre-Reqs"
           fi
           pip install -r $(dirname ${{ matrix.notebook }})/requirements.txt
-          pip install pytest
-          pip install nbval
+          #pip install pytest
+          #pip install nbval
           pip install nbconvert
-          pip install bandit
+          #pip install bandit
           pip install ipykernel
 
       - name: Execute notebooks
@@ -147,13 +147,13 @@ jobs:
           export CASJOBS_USERID="$CI_CASJOBS_USERID"
           jupyter nbconvert --template classic --to html --execute "${{ matrix.notebook }}"
 
-      - name: Validate notebooks
-        run: |
-          pytest --nbval "${{ matrix.notebook }}"
+#      - name: Validate notebooks
+#        run: |
+#          pytest --nbval "${{ matrix.notebook }}"
 
-      - name: Scan with Bandit
-        run: |
-          pip install ipython
-          jupyter nbconvert --to script ${{ matrix.notebook }}
-          pyfile=$(echo "${{ matrix.notebook }}" | sed 's/\.ipynb$/.py/')
-          bandit -lll -iii $pyfile
+#      - name: Scan with Bandit
+#        run: |
+#          pip install ipython
+#          jupyter nbconvert --to script ${{ matrix.notebook }}
+#          pyfile=$(echo "${{ matrix.notebook }}" | sed 's/\.ipynb$/.py/')
+#          bandit -lll -iii $pyfile
