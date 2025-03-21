@@ -48,6 +48,11 @@ jobs:
           
           # Read each line from ci_config.txt and construct the matrix
           while IFS=: read -r notebook runner; do
+            # Skip empty lines or lines starting with '#'
+            if [[ -z "$notebook" || "$notebook" == \#* ]]; then
+              continue
+            fi
+            
             # Trim spaces and construct a JSON object with both notebook and runner size
             notebook=$(echo "$notebook" | xargs)
             runner=$(echo "$runner" | xargs)
@@ -56,16 +61,13 @@ jobs:
             matrix=$(echo $matrix | jq --arg notebook "$notebook" --arg runner "$runner" \
               '. + [{"notebook": $notebook, "runner": $runner}]')
           done < "$ci_config_file"
-
+          
           # Debugging output
           echo "Matrix: $matrix"
           
           # Set the matrix output (ensure it's never empty)
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
-          
-      - name: Verify matrix output
-        run: |
-          echo "Matrix output: ${{ steps.set-matrix.outputs.matrix }}"
+
 
   notebook-execution:
     needs: gather-notebooks
