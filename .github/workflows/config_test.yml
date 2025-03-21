@@ -46,21 +46,36 @@ jobs:
             exit 1
           fi
           
-          # Read each line from ci_config.txt and construct the matrix
+          # Define an associative array to store runner sizes for notebooks
+          declare -A config_map
+          
+          # Read each line from ci_config.txt and construct the config_map
           while IFS=: read -r notebook runner; do
             # Skip empty lines or lines starting with '#'
             if [[ -z "$notebook" || "$notebook" == \#* ]]; then
               continue
             fi
             
-            # Trim spaces and construct a JSON object with both notebook and runner size
+            # Trim spaces
             notebook=$(echo "$notebook" | xargs)
             runner=$(echo "$runner" | xargs)
             
+            # Store notebook and runner size in the map
+            config_map["$notebook"]=$runner
+          done < "$ci_config_file"
+          
+          # Now, loop through the notebooks and set their runner size
+          for notebook in $(find notebooks/ -type f -name "*.ipynb"); do
+            # Trim leading path information
+            notebook_name=$(echo "$notebook" | sed 's|.*/\(.*\)|\1|')
+          
+            # Get the runner for this notebook, default to "ubuntu-latest" if not found
+            runner=${config_map["$notebook"]:-"ubuntu-latest"}
+          
             # Add notebook and runner size to the matrix
             matrix=$(echo $matrix | jq --arg notebook "$notebook" --arg runner "$runner" \
               '. + [{"notebook": $notebook, "runner": $runner}]')
-          done < "$ci_config_file"
+          done
           
           # Debugging output
           echo "Matrix: $matrix"
