@@ -54,6 +54,7 @@ jobs:
         
   get-runners:
     name: get-runners
+    needs: gather-notebooks
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -94,7 +95,7 @@ jobs:
       runnerName: ${{ steps.parse_config.outputs.runnerName }} # Correct reference to the output variable
       
   notebook-execution:
-    needs: gather-notebooks
+    needs: get-runners
     environment: ci_env
     runs-on: ${{ needs.get-runners.outputs.runnerName }} 
       
