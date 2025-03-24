@@ -24,96 +24,48 @@ env:
   CASJOBS_USERID: ${{ secrets.CASJOBS_USERID }}
 
 jobs:
-  prepare:
+
+  generate-matrix:
+    name: Generate Notebook Matrix
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.generate-matrix.outputs.matrix }}
+      matrix: ${{ steps.build_matrix.outputs.matrix }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Parse config
-        id: parse-config
+      - name: Find notebooks and build matrix
+        id: build_matrix
+        shell: bash
         run: |
-          python -c "
-          with open('ci_config.txt') as f:
-              lines = f.readlines()
-          config = {}
-          for line in lines:
-              if ':' in line:
-                  key, value = line.split(':', 1)
-                  config[key.strip()] = value.strip()
-              else:
-                  print(f'Warning: Skipping invalid line: {line.strip()}')
-          import json
-          with open('config.json', 'w') as f:
-              json.dump(config, f)
-          "
-          # Output the file path for debugging (optional)
-          echo "config_file=config.json" >> $GITHUB_OUTPUT
+          # List all Jupyter notebooks under 'notebooks/' (null-separated to handle spaces)
+          mapfile -d $'\0' -t notebooks < <(find notebooks -type f -name '*.ipynb' -print0)
+          default_runner="ubuntu-latest"
+          # Start building the JSON string for the matrix
+          matrix_json='{"include":['
+          separator=""
+          for file in "${notebooks[@]}"; do
+            # Skip if for some reason the entry is empty
+            [[ -z "$file" ]] && continue
+            runner="$default_runner"
+            # Check if the notebook path is in the config file (match exact path followed by a colon)
+            if grep -F -m1 -q "${file}:" ci_config.txt; then
+              # Get the first matching line and extract text after the first colon
+              config_line=$(grep -F -m1 "${file}:" ci_config.txt)
+              runner_config=${config_line#*:}        # remove the path and colon
+              runner_config=$(echo "$runner_config" | xargs)  # trim whitespace
+              if [[ -n "$runner_config" ]]; then
+                runner="$runner_config"
+              fi
+            fi
+            # Escape quotes and backslashes in file and runner names for JSON safety
+            file_json=$(printf '%s' "$file"   | sed 's/\\/\\\\/g; s/\"/\\"/g')
+            runner_json=$(printf '%s' "$runner" | sed 's/\\/\\\\/g; s/\"/\\"/g')
+            # Append this notebook's entry to the JSON array
+            matrix_json+="${separator}{\"file\":\"${file_json}\",\"runner\":\"${runner_json}\"}"
+            separator=","
+          done
+          matrix_json+=']}'
+          # Output the matrix JSON (as a single line) to be used by subsequent jobs
+          echo "matrix=${matrix_json}" >> $GITHUB_OUTPUT
 
-      - name: Get list of notebooks
-        id: get-files
-        run: |
-          files=$(find notebooks -name "*.ipynb" | jq -cnR '[inputs | select(length>0)]')
-          echo "files=$files" >> $GITHUB_OUTPUT
-
-      - name: Generate matrix
-        id: generate-matrix
-        run: |
-          files="${{ steps.get-files.outputs.files }}"
-
-          # Parse ci_config.txt directly using jq to create a single JSON object from the mappings
-          jq -R 'split("\n") | map(select(length > 0)) | map(split(":") | { (.[0]): .[1] }) | add' < ci_config.txt > config.json
-
-          # Read the config.json contents into a variable
-          config_json=$(cat config.json)
-
-          # Generate the matrix with the appropriate runner based on the config
-          matrix=$(echo "$files" | jq -R --argjson config_json "$config_json" 'split(",") | map({
-            file: .,
-            runner: (
-              if ($config_json[.] == null) then "ubuntu-latest"
-              else $config_json[.]
-              end
-            )
-          })')
-
-          # Echo the matrix as output in the expected format
-          echo "matrix=$(echo $matrix | jq -c .)" >> $GITHUB_OUTPUT
-
-
-
-
-  process-files:
-    needs: prepare
-    strategy:
-      matrix:
-        include: ${{ fromJson(needs.prepare.outputs.matrix) }}
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-
-      - name: Install Jupyter
-        run: |
-          pip install jupyter nbconvert
-
-      - name: Show runner details
-        run: |
-          echo "Processing ${{ matrix.file }}"
-          echo "Runner configuration:"
-          if [ "${{ matrix.runner }}" = "ubuntu-latest" ]; then
-            echo "runs-on: ubuntu-latest"
-          else
-            echo "runs-on:"
-            echo "  group: ${{ matrix.runner.group }}"
-          fi
           
       - name: Install dependencies
         run: |
