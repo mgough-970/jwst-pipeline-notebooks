@@ -62,7 +62,7 @@ jobs:
         id: generate-matrix
         run: |
           files="${{ steps.get-files.outputs.files }}"
-          matrix=$(echo "$files" | jq --slurpfile config config.json '[ .[] | {file: ., runner: if $config[0][.] then {group: $config[0][.]} else "ubuntu-latest" end } ]')
+          matrix=$(echo "$files" | jq --slurpfile config config.json '[ .[] | {file: ., "runner": (if $config[0][.] then {"group": $config[0][.]} else "ubuntu-latest" end) } ]')
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   process-files:
