@@ -65,13 +65,12 @@ jobs:
           import json
           config = json.loads('$config')
           files = json.loads('$files')
-          matrix = []
-          for f in files:
-              runner = {'group': config[f]} if f in config else 'ubuntu-latest'
-              matrix.append({'file': f, 'runner': runner})
-          print(json.dumps(matrix))
+          matrix = [{'file': f, 'runner': {'group': config[f]} if f in config else 'ubuntu-latest'} for f in files]
+          print(json.dumps(matrix, separators=(',', ':')))
           ")
-          echo "matrix=$matrix" >> $GITHUB_OUTPUT
+          echo "matrix<<EOF" >> $GITHUB_OUTPUT
+          echo "$matrix" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
   process-files:
     needs: prepare
