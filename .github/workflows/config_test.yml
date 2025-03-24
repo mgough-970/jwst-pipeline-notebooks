@@ -74,10 +74,9 @@ jobs:
             sanitized_notebook=$(echo "$notebook" | base64)  # Encode notebook path to handle special characters
           
             # Get the runner for this notebook, default to "ubuntu-latest" if not found
-            #runner="${config_map["runs-on: group: $sanitized_notebook"]:-"ubuntu-latest"}"
             runner="${config_map["$sanitized_notebook"]:-"ubuntu-latest"}"
             if [[ "$runner" != "ubuntu-latest" ]]; then
-              runner="group: $runner"
+              runner="$runner"
             fi        
             # Add notebook and runner size to the matrix
             matrix=$(echo $matrix | jq --arg notebook "$notebook" --arg runner "$runner" \
