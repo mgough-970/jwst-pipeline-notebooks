@@ -35,7 +35,7 @@ jobs:
       - name: Parse config
         id: parse-config
         run: |
-          config=$(python -c "
+          python -c "
           with open('ci_config.txt') as f:
               lines = f.readlines()
           config = {}
@@ -46,11 +46,11 @@ jobs:
               else:
                   print(f'Warning: Skipping invalid line: {line.strip()}')
           import json
-          print(json.dumps(config))
-          ")
-          echo "config<<EOF" >> $GITHUB_OUTPUT
-          echo "$config" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          with open('config.json', 'w') as f:
+              json.dump(config, f)
+          "
+          # Output the file path for debugging (optional)
+          echo "config_file=config.json" >> $GITHUB_OUTPUT
 
       - name: Get list of notebooks
         id: get-files
@@ -61,9 +61,8 @@ jobs:
       - name: Generate matrix
         id: generate-matrix
         run: |
-          config="${{ steps.parse-config.outputs.config }}"
           files="${{ steps.get-files.outputs.files }}"
-          matrix=$(echo "$files" | jq --argjson config "$config" '[ .[] | {file: ., runner: if $config[.] then {group: $config[.]} else "ubuntu-latest" end } ]')
+          matrix=$(echo "$files" | jq --slurpfile config config.json '[ .[] | {file: ., runner: if $config[0][.] then {group: $config[0][.]} else "ubuntu-latest" end } ]')
           echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   process-files:
@@ -95,7 +94,6 @@ jobs:
             echo "runs-on:"
             echo "  group: ${{ matrix.runner.group }}"
           fi
-
           
       - name: Install dependencies
         run: |
