@@ -24,19 +24,25 @@ env:
   CASJOBS_USERID: ${{ secrets.CASJOBS_USERID }}
 
 jobs:
-
   generate-matrix:
     name: Generate Notebook Matrix
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.build_matrix.outputs.matrix }}
     steps:
+      - name: Check if notebooks directory exists
+        run: |
+          if [ ! -d "notebooks" ]; then
+            echo "Error: 'notebooks' directory not found!";
+            exit 1;
+          fi
+
       - name: Find notebooks and build matrix
         id: build_matrix
         shell: bash
         run: |
           # List all Jupyter notebooks under 'notebooks/' (null-separated to handle spaces)
-          mapfile -d $'\0' -t notebooks < <(find notebooks/ -type f -name '*.ipynb' -print0)
+          mapfile -d $'\0' -t notebooks < <(find notebooks -type f -name '*.ipynb' -print0)
           default_runner="ubuntu-latest"
           # Start building the JSON string for the matrix
           matrix_json='{"include":['
