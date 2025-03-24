@@ -63,12 +63,22 @@ jobs:
         run: |
           files="${{ steps.get-files.outputs.files }}"
           
-          # Properly format the files string into a JSON array
-          files_json=$(echo "$files" | jq -R 'split(",") | map(.)')
-          
-          # Generate the matrix by wrapping each file in an object and adding a runner key
-          matrix=$(echo "$files_json" | jq -r 'map({file: ., runner: "ubuntu-latest"})')
-          
+          # Parse the config file and map it to a dictionary
+          declare -A config
+          while IFS=: read -r file runner; do
+            config["$file"]=$runner
+          done < config.txt
+
+          # Generate the matrix with appropriate runner based on config
+          matrix=$(echo "$files" | jq -R 'split(",") | map({
+            file: .,
+            runner: (
+              if $config[.]==null then "ubuntu-latest"
+              else $config[.]
+              end
+            )
+          })')
+
           # Echo the matrix as output in the expected format
           echo "matrix=$(echo $matrix | jq -c .)" >> $GITHUB_OUTPUT
   process-files:
