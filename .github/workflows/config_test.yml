@@ -101,7 +101,7 @@ jobs:
             pip install -r pre-requirements.txt
             echo "Found Pre-Reqs"
           fi
-          pip install -r $(dirname ${{ matrix.file }})/requirements.txt
+          pip install -r ${{ matrix.file }}/requirements.txt
           #pip install pytest
           #pip install nbval
           pip install nbconvert
