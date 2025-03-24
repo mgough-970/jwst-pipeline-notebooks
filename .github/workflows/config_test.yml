@@ -63,14 +63,14 @@ jobs:
         run: |
           files="${{ steps.get-files.outputs.files }}"
 
-          # Parse the ci_config.txt directly using jq to create a mapping of files to runners
+          # Parse ci_config.txt directly using jq to create a mapping of files to runners
           config_json=$(jq -R 'split("\n") | map(select(length > 0)) | map(split(":") | {(.[0]): .[1]}) | add' ci_config.txt)
 
           # Generate the matrix with the appropriate runner based on the config
-          matrix=$(echo "$files" | jq -R 'split(",") | map({
+          matrix=$(echo "$files" | jq -R --argjson config_json "$config_json" 'split(",") | map({
             file: .,
             runner: (
-              if $config_json[.] == null then "ubuntu-latest"
+              if $config_json[.]==null then "ubuntu-latest"
               else $config_json[.]
               end
             )
@@ -78,6 +78,7 @@ jobs:
 
           # Echo the matrix as output in the expected format
           echo "matrix=$(echo $matrix | jq -c .)" >> $GITHUB_OUTPUT
+
 
 
   process-files:
