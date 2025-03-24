@@ -24,12 +24,19 @@ env:
   CASJOBS_USERID: ${{ secrets.CASJOBS_USERID }}
 
 jobs:
+jobs:
   generate-matrix:
     name: Generate Notebook Matrix
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.build_matrix.outputs.matrix }}
     steps:
+      - name: Check current directory
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Listing files in current directory:"
+          ls -la
+          
       - name: Check if notebooks directory exists
         run: |
           if [ ! -d "notebooks" ]; then
@@ -72,7 +79,8 @@ jobs:
           # Output the matrix JSON (as a single line) to be used by subsequent jobs
           echo "matrix=${matrix_json}" >> $GITHUB_OUTPUT
 
-          
+
+   Execute Notebooks:       
       - name: Install dependencies
         run: |
           echo "DEBUG ---"
