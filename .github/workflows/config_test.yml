@@ -103,7 +103,7 @@ jobs:
 
       - name: Install dependencies from requirements.txt
         run: |
-          notebook_dir=$(dirname "${{ matrix.file }})
+          notebook_dir=$(dirname "${{ matrix.file }}")
           if [ -f "$notebook_dir/requirements.txt" ]; then
             echo "Installing dependencies from $notebook_dir/requirements.txt"
             pip install -r "$notebook_dir/requirements.txt"
