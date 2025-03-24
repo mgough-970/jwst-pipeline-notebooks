@@ -100,7 +100,7 @@ jobs:
         fail-fast: false
         matrix:
             include: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
-    runs-on: ${{matrix.runner == 'ubuntu-latest' && 'ubuntu-latest' || format('group:{0}', ' ' ~ matrix.runner)  }}
+    runs-on: ${{matrix.runner == 'ubuntu-latest' && 'ubuntu-latest' || format('group:{0}', matrix.runner)  }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ inputs.python-version }}
