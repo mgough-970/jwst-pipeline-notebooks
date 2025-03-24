@@ -121,5 +121,5 @@ jobs:
         run: |
           echo "Executing notebook: ${{ matrix.file }} on runner: ${{ matrix.runner }}"
           notebook_path="notebooks/${{ matrix.file }}"
-          jupyter nbconvert --to notebook --execute "$notebook_path" --output "${{ matrix.file }}"
+          jupyter nbconvert --to html --execute "${{ matrix.file }}"
 
