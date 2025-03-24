@@ -48,7 +48,9 @@ jobs:
           import json
           print(json.dumps(config))
           ")
-          echo "config=$config" >> $GITHUB_OUTPUT
+          echo "config<<EOF" >> $GITHUB_OUTPUT
+          echo "$config" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Get list of notebooks
         id: get-files
