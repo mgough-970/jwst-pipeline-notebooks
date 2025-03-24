@@ -101,8 +101,12 @@ jobs:
         matrix:
             include: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
     #runs-on: ${{    matrix.runner == 'ubuntu-latest' && 'ubuntu-latest' || format('"group:{0}"', matrix.runner)   }}
-    runs-on:
-      group: ${{    matrix.runner == 'ubuntu-latest' && 'ubuntu-latest' || matrix.runner   }}
+
+    runs-on: |
+      ${{ contains(matrix.runner, 'group:') && matrix.runner || 'ubuntu-latest' }}
+
+    #runs-on:
+    #  group: ${{    matrix.runner == 'ubuntu-latest' && 'ubuntu-latest' || matrix.runner   }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ inputs.python-version }}
