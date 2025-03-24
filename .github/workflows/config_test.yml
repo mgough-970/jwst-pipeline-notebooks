@@ -24,7 +24,6 @@ env:
   CASJOBS_USERID: ${{ secrets.CASJOBS_USERID }}
 
 jobs:
-jobs:
   generate-matrix:
     name: Generate Notebook Matrix
     runs-on: ubuntu-latest
