@@ -67,7 +67,7 @@ jobs:
           declare -A config
           while IFS=: read -r file runner; do
             config["$file"]=$runner
-          done < config.txt
+          done < ci_config.txt
 
           # Generate the matrix with appropriate runner based on config
           matrix=$(echo "$files" | jq -R 'split(",") | map({
