@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           # List all Jupyter notebooks under 'notebooks/' (null-separated to handle spaces)
-          mapfile -d $'\0' -t notebooks < <(find notebooks -type f -name '*.ipynb' -print0)
+          mapfile -d $'\0' -t notebooks < <(find notebooks/ -type f -name '*.ipynb' -print0)
           default_runner="ubuntu-latest"
           # Start building the JSON string for the matrix
           matrix_json='{"include":['
