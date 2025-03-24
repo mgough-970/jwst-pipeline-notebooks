@@ -87,7 +87,7 @@ jobs:
           echo "DEBUG ---"
           pwd
           echo "Path to req's: $(dirname ${{ matrix.file }})/requirements.txt"
-          ls $(dirname ${{ matrix.notebook }})
+          ls $(dirname ${{ matrix.file }})
           echo "---"
           
           if [ -f $(dirname "${{ matrix.file }}")/pre-requirements.sh ]; then
