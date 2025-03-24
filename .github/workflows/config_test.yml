@@ -61,16 +61,8 @@ jobs:
         run: |
           config="${{ steps.parse-config.outputs.config }}"
           files="${{ steps.get-files.outputs.files }}"
-          matrix=$(python -c "
-          import json
-          config = json.loads('$config')
-          files = json.loads('$files')
-          matrix = [{'file': f, 'runner': {'group': config[f]} if f in config else 'ubuntu-latest'} for f in files]
-          print(json.dumps(matrix, separators=(',', ':')))
-          ")
-          echo "matrix<<EOF" >> $GITHUB_OUTPUT
-          echo "$matrix" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          matrix=$(echo "$files" | jq --argjson config "$config" '[ .[] | {file: ., runner: if $config[.] then {group: $config[.]} else "ubuntu-latest" end } ]')
+          echo "matrix=$matrix" >> $GITHUB_OUTPUT
 
   process-files:
     needs: prepare
@@ -101,6 +93,7 @@ jobs:
             echo "runs-on:"
             echo "  group: ${{ matrix.runner.group }}"
           fi
+
           
       - name: Install dependencies
         run: |
