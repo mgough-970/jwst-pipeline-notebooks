@@ -62,8 +62,8 @@ jobs:
         id: generate-matrix
         run: |
           files="${{ steps.get-files.outputs.files }}"
-          
-          # Parse the config file and map it to a dictionary
+
+          # Parse the ci_config.txt file and map it to a dictionary
           declare -A config
           while IFS=: read -r file runner; do
             config["$file"]=$runner
@@ -81,6 +81,7 @@ jobs:
 
           # Echo the matrix as output in the expected format
           echo "matrix=$(echo $matrix | jq -c .)" >> $GITHUB_OUTPUT
+
   process-files:
     needs: prepare
     strategy:
