@@ -85,9 +85,8 @@ jobs:
     name: Execute Notebooks in Parallel
     needs: generate-matrix
     strategy:
-      matrix:
-        include: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
-    runs-on: ${{ matrix.runner }}  # Assign the runner dynamically for each notebook
+      matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}  # This uses the generated matrix output
+    runs-on: ${{ matrix.runner }}  # Runs each notebook on its assigned runner
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
@@ -117,4 +116,3 @@ jobs:
           notebook_path="notebooks/${{ matrix.file }}"
           jupyter nbconvert --to notebook --execute "$notebook_path" --output "${{ matrix.file }}"
 
-      # Add additional steps to install dependencies if required for your notebooks
