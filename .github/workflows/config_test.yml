@@ -89,7 +89,7 @@ jobs:
           clean_matrix=$(echo "$matrix" | jq -c .)
           
           # Set the matrix output (ensure it's never empty)
-          echo "matrix=' $clean_matrix'" >> $GITHUB_OUTPUT
+          echo "matrix=$clean_matrix" >> $GITHUB_OUTPUT
           #echo "::set-output name=runner_with_space:: $(echo ' ${matrix}')"
 
   notebook-execution:
@@ -100,7 +100,7 @@ jobs:
         fail-fast: false
         matrix:
             include: ${{ fromJson(needs.gather-notebooks.outputs.matrix) }}
-    runs-on: ${{matrix.runner == 'ubuntu-latest' && 'ubuntu-latest' || format('group:{0}', matrix.runner)  }}
+    runs-on: ${{    matrix.runner == 'ubuntu-latest' && 'ubuntu-latest' || format('"group:{0}"', matrix.runner)   }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python ${{ inputs.python-version }}
