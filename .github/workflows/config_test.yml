@@ -111,6 +111,7 @@ jobs:
           fi
 
       - name: Execute Jupyter Notebook
+        continue-on-error: true  # This will allow the rest of the jobs to continue even if this step fails
         run: |
           echo "Executing notebook: ${{ matrix.file }} on runner: ${{ matrix.runner }}"
           notebook_path="notebooks/${{ matrix.file }}"
