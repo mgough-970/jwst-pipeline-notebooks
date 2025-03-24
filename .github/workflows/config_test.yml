@@ -62,11 +62,15 @@ jobs:
         id: generate-matrix
         run: |
           files="${{ steps.get-files.outputs.files }}"
-          # Fix the file format and ensure it's a valid JSON array
+          
+          # Properly format the files string into a JSON array
           files_json=$(echo "$files" | jq -R 'split(",") | map(.)')
+          
+          # Generate the matrix by wrapping each file in an object and adding a runner key
           matrix=$(echo "$files_json" | jq -r 'map({file: ., runner: "ubuntu-latest"})')
-          echo "matrix=$matrix" >> $GITHUB_OUTPUT
-
+          
+          # Echo the matrix as output in the expected format
+          echo "matrix=$(echo $matrix | jq -c .)" >> $GITHUB_OUTPUT
   process-files:
     needs: prepare
     strategy:
