@@ -85,6 +85,7 @@ jobs:
     name: Execute Notebooks in Parallel
     needs: generate-matrix
     strategy:
+      fail-fast: false
       matrix: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}  # This uses the generated matrix output
     runs-on: ${{ matrix.runner }}  # Runs each notebook on its assigned runner
     steps:
