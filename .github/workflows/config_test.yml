@@ -47,7 +47,7 @@ jobs:
       - name: Get list of notebooks
         id: get-files
         run: |
-          files=$(find notebooks -name "*.ipynb" | xargs -n1 basename | jq -R . | jq -s .)
+          files=$(find notebooks -name "*.ipynb" | jq -R . | jq -s .)
           echo "files=$files" >> $GITHUB_OUTPUT
 
       - name: Generate matrix
@@ -80,7 +80,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: '3.x'
 
       - name: Install Jupyter
         run: |
