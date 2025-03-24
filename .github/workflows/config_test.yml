@@ -100,7 +100,12 @@ jobs:
       - name: Install Jupyter
         run: |
           pip install jupyter nbconvert
-
+          
+      - name: Set up Python ${{ inputs.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}
+          
       - name: Install dependencies from requirements.txt
         run: |
           notebook_dir=$(dirname "${{ matrix.file }}")
