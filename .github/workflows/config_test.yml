@@ -63,7 +63,7 @@ jobs:
         run: |
           files="${{ steps.get-files.outputs.files }}"
 
-          # Parse ci_config.txt directly using jq to create a mapping of files to runners
+          # Parse ci_config.txt directly using jq to create a single mapping of files to runners
           jq -R 'split("\n") | map(select(length > 0)) | map(split(":") | {(.[0]): .[1]}) | add' < ci_config.txt > config.json
 
           # Read config.json contents and pass it into jq as a string
@@ -81,9 +81,6 @@ jobs:
 
           # Echo the matrix as output in the expected format
           echo "matrix=$(echo $matrix | jq -c .)" >> $GITHUB_OUTPUT
-
-
-
 
 
   process-files:
