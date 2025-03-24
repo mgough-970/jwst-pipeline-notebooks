@@ -32,12 +32,13 @@ jobs:
     steps:
       - name: Checkout the repository
         uses: actions/checkout@v3
+
       - name: Check current directory
         run: |
           echo "Current directory: $(pwd)"
           echo "Listing files in current directory:"
           ls -la
-          
+
       - name: Check if notebooks directory exists
         run: |
           if [ ! -d "notebooks" ]; then
@@ -80,51 +81,40 @@ jobs:
           # Output the matrix JSON (as a single line) to be used by subsequent jobs
           echo "matrix=${matrix_json}" >> $GITHUB_OUTPUT
 
+  run-notebooks:
+    name: Execute Notebooks in Parallel
+    needs: generate-matrix
+    strategy:
+      matrix:
+        include: ${{ fromJson(needs.generate-matrix.outputs.matrix) }}
+    runs-on: ${{ matrix.runner }}  # Assign the runner dynamically for each notebook
+    steps:
+      - name: Checkout the repository
+        uses: actions/checkout@v3
 
-     # Execute-Notebooks:       
-      - name: Install dependencies
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install Jupyter
         run: |
-          echo "DEBUG ---"
-          pwd
-          echo "Path to req's: $(dirname ${{ matrix.file }})/requirements.txt"
-          ls $(dirname ${{ matrix.file }})
-          echo "---"
-          
-          if [ -f $(dirname "${{ matrix.file }}")/pre-requirements.sh ]; then
-            chmod +x $(dirname "${{ matrix.file }}")/pre-requirements.sh
-            ./$(dirname "${{ matrix.file }}")/pre-requirements.sh
+          pip install jupyter nbconvert
+
+      - name: Install dependencies from requirements.txt
+        run: |
+          notebook_dir=$(dirname "${{ matrix.file }})
+          if [ -f "$notebook_dir/requirements.txt" ]; then
+            echo "Installing dependencies from $notebook_dir/requirements.txt"
+            pip install -r "$notebook_dir/requirements.txt"
+          else
+            echo "No requirements.txt found in $notebook_dir"
           fi
-          if [ -f $(dirname "${{ matrix.file }}")/pre-requirements.txt ]; then
-            pip install -r $(dirname "${{ matrix.file }}")/pre-requirements.txt
-          fi
-          if [ -f pre-requirements.txt ]; then
-            pip install -r pre-requirements.txt
-            echo "Found Pre-Reqs"
-          fi
-          pip install -r ${{ matrix.file }}/requirements.txt
-          #pip install pytest
-          #pip install nbval
-          pip install nbconvert
-          #pip install bandit
-          pip install ipykernel
-          
+
       - name: Execute Jupyter Notebook
         run: |
-          export CASJOBS_PW="$CI_CASJOBS_PW"
-          export CASJOBS_USERID="$CI_CASJOBS_USERID"
-          echo "Executing ${{ matrix.file }} on runner: ${{ toJson(matrix.runner) }}"
-          # Find the full path of the notebook and execute it
-          notebook_path=$(find notebooks -name "${{ matrix.file }}")
+          echo "Executing notebook: ${{ matrix.file }} on runner: ${{ matrix.runner }}"
+          notebook_path="notebooks/${{ matrix.file }}"
           jupyter nbconvert --to notebook --execute "$notebook_path" --output "${{ matrix.file }}"
 
-
-#      - name: Validate notebooks
-#        run: |
-#          pytest --nbval "${{ matrix.notebook }}"
-
-#      - name: Scan with Bandit
-#        run: |
-#          pip install ipython
-#          jupyter nbconvert --to script ${{ matrix.notebook }}
-#          pyfile=$(echo "${{ matrix.notebook }}" | sed 's/\.ipynb$/.py/')
-#          bandit -lll -iii $pyfile
+      # Add additional steps to install dependencies if required for your notebooks
