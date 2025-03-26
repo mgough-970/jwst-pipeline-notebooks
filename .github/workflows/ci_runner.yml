@@ -15,7 +15,7 @@ on:
     #paths:
     #  - 'notebooks/**.ipynb'
     #  - '*.yml'
-     # - 'notebooks/**.txt'
+     # - 'notebooks/**/requirements.txt'
       
 #permissions:
 #  contents: write
@@ -26,7 +26,7 @@ on:
  
 jobs:
   NotebookExecutionValidation:
-   uses: spacetelescope/notebook-ci-actions/.github/workflows/ci_runner.yml@gough_dev
+   uses: spacetelescope/notebook-ci-actions/.github/workflows/ci_runner.yml@req_dev
    with:
       python-version: ${{ vars.PYTHON_VERSION || '3.11' }}
    permissions:
