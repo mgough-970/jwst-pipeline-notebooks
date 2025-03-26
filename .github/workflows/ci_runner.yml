@@ -15,7 +15,7 @@ on:
     paths:
       - 'notebooks/**.ipynb'
       - '*.yml'
-      - 'requirements.txt'
+      - 'notebooks/**.txt'
       
 #permissions:
 #  contents: write
