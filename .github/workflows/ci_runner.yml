@@ -12,10 +12,10 @@ on:
    pull_request:
     branches:
       - main
-    paths:
-      - 'notebooks/**.ipynb'
-      - '*.yml'
-      - 'notebooks/**.txt'
+    #paths:
+    #  - 'notebooks/**.ipynb'
+    #  - '*.yml'
+     # - 'notebooks/**.txt'
       
 #permissions:
 #  contents: write
