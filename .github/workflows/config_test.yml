@@ -25,7 +25,7 @@ env:
 
 jobs:
   generate-matrix:
-    name: Generate Notebook Matrix
+    name: Generate Notebooks Matrix
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.build_matrix.outputs.matrix }}
