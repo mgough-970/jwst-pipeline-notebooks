@@ -28,10 +28,23 @@ jobs:
           files_json=$(echo "$files" | jq -R -s -c 'split("\n")[:-1]')
           echo "::set-output name=matrix::${files_json}"
 
+      - name: Parse CI Config
+        id: parse-config
+        run: |
+          # Convert ci_config.txt to JSON with group structure for specific runners, string for default
+          config=$(cat ci_config.txt | jq -R 'split(":") | { (.[0]): { "group": .[1] } }' | jq -s 'reduce .[] as $item ({}; . + $item) + {"default": "ubuntu-latest"}' | jq -c .)
+          echo "config<<EOF" >> $GITHUB_OUTPUT
+          echo "$config" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
   execute-notebooks:
     if: github.event.pull_request.merged == true
     needs: prepare_matrix
-    runs-on: ubuntu-latest
+    runs-on:  ${{ 
+      fromJson(needs.gather-notebooks.outputs.runner-config)[matrix.notebooks] != 'ubuntu-latest' && 
+      fromJson(needs.gather-notebooks.outputs.runner-config)[matrix.notebooks] || 
+      'ubuntu-latest' 
+      }}    
     strategy:
       fail-fast: false
       matrix:
